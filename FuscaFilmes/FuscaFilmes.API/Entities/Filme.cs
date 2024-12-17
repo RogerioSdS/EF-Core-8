@@ -11,6 +11,7 @@ namespace FuscaFilmes.API.Entities
         // Esta propriedade é obrigatória, garantindo que 'Titulo' seja sempre definido.
         public required string Titulo { get; set; }
         public int? Ano { get; set; }
+        public int DiretorId { get; set; }
         public Diretor Diretor { get; set; }           
     }
 }
