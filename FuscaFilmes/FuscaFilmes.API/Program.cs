@@ -1,12 +1,15 @@
 using System.Text.Json.Serialization;
 using FuscaFilmes.API.DbContexts;
 using FuscaFilmes.API.Entities;
+using FuscaFilmes.API.Models;
+using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<Context>(
     options => options.UseSqlite(builder.Configuration["ConnectionStrings:FuscaFilmesStr"])
+                      .LogTo(Console.WriteLine, LogLevel.Information)//Inserindo log na tela que esta executando o codigo
 );
 
 // Add services to the container.
@@ -43,25 +46,47 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
 app.MapGet("/diretores", (Context context) =>
 {
     return context.Diretores
     .Include(diretor => diretor.Filmes)
     .ToList();
 })
-.WithOpenApi(); app.UseHttpsRedirection();
+.WithOpenApi(); 
+
+app.MapGet("/diretores/firstOrDefault/{name}", (string name, Context context) =>
+{
+    // return context.Diretores
+    //     .Include(diretor => diretor.Filmes)    
+    //     .Select(diretor => diretor.Name)
+    //     .FirstOrDefault() ?? "Nenhum Diretor Encontrado";
+
+    return context.Diretores
+        .Include(diretor => diretor.Filmes)    
+        //.Select(diretor => diretor.Name)
+        .FirstOrDefault(diretor => diretor.Name == name) ?? new Diretor{Id = 9999, Name = "Nenhum Diretor Encontrado"};
+})
+.WithOpenApi(); 
+
+app.MapGet("/diretores/where/{id}", (int id, Context context) =>
+{
+    return context.Diretores
+    .Where(diretor => diretor.Id == id)
+    .Include(diretor => diretor.Filmes)
+    .ToList();
+})
+.WithOpenApi(); 
 
 app.MapPost("/diretores/", (Diretor diretor,Context context) =>
 {
     context.Diretores.Add(diretor);
     context.SaveChanges();
 })
-.WithOpenApi(); app.UseHttpsRedirection();
+.WithOpenApi();
 
 app.MapPut("/diretores/{diretorId}", (int diretorId, Diretor diretorNovo, Context context) =>
 {
+    //na entidade filme, o update está sendo feito pelo metodo novo do EF Core o ExecuteUpdate
     var diretor = context.Diretores.Find(diretorId);
 
     if (diretor != null)
@@ -80,10 +105,10 @@ app.MapPut("/diretores/{diretorId}", (int diretorId, Diretor diretorNovo, Contex
     context.SaveChanges();
 })
 .WithOpenApi();
-app.UseHttpsRedirection();
 
 app.MapDelete("/diretores/{diretorId}", (int diretorId, Context context) =>
 {
+    //na entidade filme, o delete está sendo feito pelo metodo novo do EF Core o ExecuteDelete
     var diretorDelete = context.Diretores.Find(diretorId);
 
     if (diretorDelete != null)
@@ -93,4 +118,95 @@ app.MapDelete("/diretores/{diretorId}", (int diretorId, Context context) =>
     context.SaveChanges();
 })
 .WithOpenApi();
+
+app.MapGet("/filmes", ( Context context) =>
+{
+    return context.Filmes        
+        .Include(filme => filme.Diretor)
+        .OrderByDescending(filme => filme.Ano)
+        .ThenBy(filme => filme.Titulo)
+        .ToList();
+})
+.WithOpenApi(); 
+
+app.MapGet("/filmes/{id}", (int id, Context context) =>
+{
+    return context.Filmes
+        .Where(filme => filme.Id == id)
+        .Include(filme => filme.Diretor)
+        .ToList();
+})
+.WithOpenApi(); 
+
+app.MapGet("/filmes/byNameLikeEFFunctions/{titulo}", (string titulo, Context context) =>
+{
+    // return context.Filmes
+    //     .Where(filme => filme.Titulo.Contains(titulo))
+    //     .Include(filme => filme.Diretor)
+    //     .ToList();
+
+    return context.Filmes
+        .Where(filme => EF.Functions.Like(filme.Titulo, $"%{titulo}%"))
+        .Include(filme => filme.Diretor)
+        .ToList();
+})
+.WithOpenApi(); 
+
+app.MapGet("/filmes/byNameContainsLinQ/{titulo}", (string titulo, Context context) =>
+{
+    // return context.Filmes
+    //     .Where(filme => filme.Titulo.Contains(titulo))
+    //     .Include(filme => filme.Diretor)
+    //     .ToList();
+
+    return context.Filmes
+        .Where(filme => EF.Functions.Like(filme.Titulo, $"%{titulo}%"))
+        .Include(filme => filme.Diretor)
+        .ToList();
+})
+.WithOpenApi(); 
+
+app.MapPatch("/filmes/update", (FilmeUpdate filmeUpdate, Context context) =>
+{
+   var filmeSeleted = context.Filmes.Find(filmeUpdate.Id);
+
+    if (filmeSeleted == null) 
+        return Results.NotFound();
+
+    filmeSeleted.Titulo = filmeUpdate.Titulo;
+    filmeSeleted.Ano = filmeUpdate.Ano;
+
+    context.Update(filmeSeleted);
+    context.SaveChanges();
+
+    return Results.Ok(filmeSeleted);       
+})
+.WithOpenApi();
+
+app.MapPatch("/filmes/executeUpdate", (FilmeUpdate filmeUpdate, Context context) =>
+{
+    var result = context.Filmes
+    .Where(filme => filme.Id == filmeUpdate.Id)
+    .ExecuteUpdate(setter => setter
+    .SetProperty(f => f.Titulo, filmeUpdate.Titulo)
+    .SetProperty(f => f.Ano, filmeUpdate.Ano)
+    );
+
+    if (result > 0) 
+       return Results.Ok($"Linha(s) afetada(s) {result}");       
+    else
+        return Results.NotFound();
+})
+.WithOpenApi();
+
+app.MapDelete("/filmes/{filmeId}", (int filmeId, Context context) =>
+{
+    context.Filmes
+    .Where(filme => filme.Id == filmeId)
+    .ExecuteDelete();
+})
+.WithOpenApi();
+
+app.UseHttpsRedirection();
+
 app.Run();
