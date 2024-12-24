@@ -1,7 +1,8 @@
-using FuscaFilmes.API.Entities;
+
+using FuscaFilmes.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace FuscaFilmes.API.DbContexts
+namespace FuscaFilmes.Repo.DbContexts
 {
     public class Context(DbContextOptions<Context> options) : DbContext(options)
     {
