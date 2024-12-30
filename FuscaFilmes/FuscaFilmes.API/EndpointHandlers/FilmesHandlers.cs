@@ -10,7 +10,7 @@ namespace FuscaFilmes.API.EndpointHandlers
         public static IEnumerable<Filme> GetFilmes(Context context)
         {
             return context.Filmes
-                .Include(filme => filme.Diretor)
+                .Include(filme => filme.Diretores)
                 .OrderByDescending(filme => filme.Ano)
                 .ThenBy(filme => filme.Titulo)
                 .ToList();
@@ -19,7 +19,7 @@ namespace FuscaFilmes.API.EndpointHandlers
         {
             return context.Filmes
                 .Where(filme => filme.Id == id)
-                .Include(filme => filme.Diretor)
+                .Include(filme => filme.Diretores)
                 .ToList();
         }
 
@@ -27,7 +27,7 @@ namespace FuscaFilmes.API.EndpointHandlers
         {
             return context.Filmes
                 .Where(filme => EF.Functions.Like(filme.Titulo, $"%{titulo}%"))
-                .Include(filme => filme.Diretor)
+                .Include(filme => filme.Diretores)
                 .ToList();
         }
 
@@ -35,7 +35,7 @@ namespace FuscaFilmes.API.EndpointHandlers
         {
             return context.Filmes
                 .Where(filme => filme.Titulo.Contains(titulo))
-                .Include(filme => filme.Diretor)
+                .Include(filme => filme.Diretores)
                 .ToList();
         }
 
@@ -71,7 +71,7 @@ namespace FuscaFilmes.API.EndpointHandlers
             );
 
             if (result > 0)
-                return Results.Ok($"Linha(s) afetada(s) {result}");
+                return Results.Ok($"Linha(s) afetada(s): {result}");
             else
                 return Results.NotFound();
         }

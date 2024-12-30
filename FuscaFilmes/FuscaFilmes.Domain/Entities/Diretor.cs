@@ -9,6 +9,9 @@ namespace FuscaFilmes.Domain.Entities
         // Ele serve para representar uma lista de Filmes que um Diretor realizou.
         // O tipo ICollection permite que seja possivel adicionar, remover e contar
         // quantos Filmes um Diretor tem.
-        public ICollection<Filme> Filmes { get; set; } = new List<Filme>();    
+        public ICollection<Filme> Filmes { get; set; } = new List<Filme>();
+        public ICollection<DiretorFilme> DiretoresFilmes { get; set; } = null!; 
+        public DiretorDetalhe? DiretorDetalhe { get; set; }
+
     }
 }

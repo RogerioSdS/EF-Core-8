@@ -114,15 +114,15 @@
           "xORXKHL-QeWT2FLQDeF1n"
         ],
         "ui": {
-          "x": 517,
-          "y": 307,
+          "x": 406,
+          "y": 318,
           "zIndex": 2,
           "widthName": 60,
           "widthComment": 60,
           "color": ""
         },
         "meta": {
-          "updateAt": 1734448265480,
+          "updateAt": 1735044030160,
           "createAt": 1734447809457
         }
       }
@@ -329,8 +329,8 @@
           "columnIds": [
             "aPU1WX0DHt1T5DWieYiwn"
           ],
-          "x": 699.5,
-          "y": 307,
+          "x": 588.5,
+          "y": 318,
           "direction": 4
         },
         "meta": {
