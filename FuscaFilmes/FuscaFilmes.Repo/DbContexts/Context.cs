@@ -1,4 +1,5 @@
 
+using System.Data.Common;
 using FuscaFilmes.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,15 +13,44 @@ namespace FuscaFilmes.Repo.DbContexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // modelBuilder.Entity<Diretor>()
-            // // Define que a entidade "Diretor" tem uma relação de "um para muitos" com a entidade "Filmes".
-            // .HasMany(e => e.Filmes)
-            // // sendo  que a entidade "Filmes" possui uma relação de "muitos para um" com a entidade "Diretor".
-            // .WithOne(e => e.Diretor)
-            // // sendo a propriedade "DiretorId" como chave estrangeira na entidade "Filmes".
-            // .HasForeignKey(e => e.DiretorId)
-            // // Especifica que a propriedade "DiretorId" é obrigatória (não pode ser nula).
-            // .IsRequired();
+            modelBuilder.Entity<Diretor>(
+               d =>
+               {
+                    d.HasMany(d => d.Filmes)
+                    .WithMany(f => f.Diretores)
+                    .UsingEntity<DiretorFilme>(
+                        // // Define que a entidade "Diretor" tem uma relação de "um para muitos" com a entidade "Filmes".
+                        // .HasMany(e => e.Filmes)
+                        // // sendo  que a entidade "Filmes" possui uma relação de "muitos para um" com a entidade "Diretor".
+                        // .WithOne(e => e.Diretor)
+                        // // sendo a propriedade "DiretorId" como chave estrangeira na entidade "Filmes".
+                        // .HasForeignKey(e => e.DiretorId)
+                        // // Especifica que a propriedade "DiretorId" é obrigatória (não pode ser nula).
+                        // .IsRequired();
+                        df => df.HasOne<Filme>(e => e.Filme)
+                                .WithMany(e => e.DiretoresFilmes)
+                                .HasForeignKey(e => e.FilmeId),//Comando apenas para confirmar que estejam relacionados. Mas o entity framework faz isso por padrão.
+
+                        df => df.HasOne<Diretor>(e => e.Diretor)
+                                .WithMany(e => e.DiretoresFilmes)
+                                .HasForeignKey(e => e.DiretorId),//Comando apenas para confirmar que estejam relacionados. Mas o entity framework faz isso por padrão.
+
+                        //comando para garantir que a chave primária seja composta, porque o entity framework não faz isso por padrão, mas não é preciso fazer isso. Fazendo apenas para garantir que estej funcionando        
+                        df => 
+                        {
+                            df.HasKey(e => new { e.DiretorId, e.FilmeId });
+                            df.ToTable("DiretoresFilmes");
+                        });
+                    //determinando foreignKey
+                    d.HasOne(d => d.DiretorDetalhe)
+                    .WithOne(d => d.Diretor)
+                    .HasForeignKey<DiretorDetalhe>(d => d.DiretorId);
+
+                    //Já esta sendo aplicado essa data annotation para alterar o nome da coluna chave na classe Filmes, apenas fiz aqui para saber que a mesma pode ser feita aqui no Fluent API
+                    d.Property(diretor => diretor.Id)
+                    .HasColumnName("id_diretor");
+               }
+            );
 
             modelBuilder.Entity<Diretor>().HasData(
                 // Aqui é feita a predefinição de dados para a entidade "Diretor".
@@ -41,6 +71,10 @@ namespace FuscaFilmes.Repo.DbContexts
                 new Diretor { Id = 13, Name = "Wes Anderson" }
             );          
 
+            modelBuilder.Entity<Filme>()
+                .Property(filme => filme.Orcamento)
+                .HasPrecision(18, 2);
+            
             modelBuilder.Entity<Filme>().HasData(
                 new Filme { Id = 1, Titulo = "Interstellar", Ano = 2014 },
                 new Filme { Id = 2, Titulo = "Pulp Fiction", Ano = 1994 },
@@ -67,26 +101,7 @@ namespace FuscaFilmes.Repo.DbContexts
                 new Filme { Id = 23, Titulo = "Little Women", Ano = 2019 },
                 new Filme { Id = 24, Titulo = "The Grand Budapest Hotel", Ano = 2014 },
                 new Filme { Id = 25, Titulo = "Moonrise Kingdom", Ano = 2012 }
-            );
-
-            modelBuilder.Entity<Diretor>()
-            .HasMany(d => d.Filmes)
-            .WithMany(f => f.Diretores)
-            .UsingEntity<DiretorFilme>(
-            df => df.HasOne<Filme>(e => e.Filme)
-                     .WithMany(e => e.DiretoresFilmes)
-                     .HasForeignKey(e => e.FilmeId),//Comando apenas para confirmar que estejam relacionados. Mas o entity framework faz isso por padrão.
-            df => df.HasOne<Diretor>(e => e.Diretor)
-                     .WithMany(e => e.DiretoresFilmes)
-                     .HasForeignKey(e => e.DiretorId),//Comando apenas para confirmar que estejam relacionados. Mas o entity framework faz isso por padrão.
-            df => //comando para garantir que a chave primária seja composta, porque o entity framework não faz isso por padrão, mas não é preciso fazer isso. Fazendo apenas para garantir que estej funcionando
-            {
-                df.HasKey(e => new { e.DiretorId, e.FilmeId });
-                df.ToTable("DiretoresFilmes");
-            })
-            .HasOne(d => d.DiretorDetalhe)
-            .WithOne(d => d.Diretor)
-            .HasForeignKey<DiretorDetalhe>(d => d.DiretorId);
+            );     
 
             modelBuilder.Entity<DiretorFilme>().HasData(
                 new { DiretorId = 1, FilmeId = 1 },
@@ -109,10 +124,14 @@ namespace FuscaFilmes.Repo.DbContexts
                 new { DiretorId = 6, FilmeId = 18 }
             );
 
-              modelBuilder.Entity<DiretorDetalhe>().HasData(
-                new DiretorDetalhe { Id = 1,DiretorId = 1, Biografia = "Biografia do Christopher Nolan", DataNascimento = new DateTime(1970, 10, 30) },               
-                new DiretorDetalhe { Id = 2, DiretorId = 2,Biografia = "Biografia do Quentin Tarantino", DataNascimento = new DateTime(1963, 3, 27) }                
-            );
+           /* modelBuilder.Entity<DiretorDetalhe>()
+           .Property(dd => dd.DataCriacao)
+           .HasDefaultValueSql("GETDATE()");*/
+
+            modelBuilder.Entity<DiretorDetalhe>().HasData(
+               new DiretorDetalhe { Id = 1, DiretorId = 1, Biografia = "Biografia do Christopher Nolan", DataNascimento = new DateTime(1970, 10, 30) },
+               new DiretorDetalhe { Id = 2, DiretorId = 2, Biografia = "Biografia do Quentin Tarantino", DataNascimento = new DateTime(1963, 3, 27) }
+           );
         }
     }
 }
