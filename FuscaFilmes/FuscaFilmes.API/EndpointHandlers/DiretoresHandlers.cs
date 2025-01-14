@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using FuscaFilmes.Domain.Entities;
 using FuscaFilmes.Repo.Contratos;
 
@@ -6,40 +7,39 @@ namespace FuscaFilmes.API.EndpointHandlers
     public static class DiretoresHandlers
     {
         //Todas as chamadas do context/repositorio estão sendo feitas por meio de um IDiretorRepository, que é uma interface IDiretorRepository que está sendo implementada na classe DiretorRepository, que recebe o contexto por meio do construtor, ou seja, nada que esta sendo trabalhado na camada da API faz consultas ao banco de dados.
-        public static IEnumerable<Diretor> GetDiretores(IDiretorRepository diretorRepository)
+        public static async Task<IEnumerable<Diretor>> GetDiretoresAsync(IDiretorRepository diretorRepository)
         {
-            return diretorRepository.GetDiretores();
+            return await diretorRepository.GetDiretoresAsync();
         }
 
-        public static Diretor GetDiretorByName(string name, IDiretorRepository diretorRepository)
+        public static async Task<Diretor> GetDiretorByNameAsync(string name, IDiretorRepository diretorRepository)
         {
-            return diretorRepository.GetDiretorByName(name);
+            return await diretorRepository.GetDiretorByNameAsync(name);
         }
 
-        public static IEnumerable<Diretor> GetDiretoresById(int id, IDiretorRepository diretorRepository)
+        public static async Task<IEnumerable<Diretor>> GetDiretoresByIdAsync(int id, IDiretorRepository diretorRepository)
         {
-            return diretorRepository.GetDiretoresById(id);
+            return await diretorRepository.GetDiretoresByIdAsync(id);
         }
 
-        public static IResult AddDiretores(IDiretorRepository diretorRepository, Diretor diretor)
+        public static async Task<IResult> AddDiretoresAsync(IDiretorRepository diretorRepository, Diretor diretor)
         {
-            diretorRepository.Add(diretor);
-            if (diretorRepository.SaveChanges())
+            await diretorRepository.AddAsync(diretor);
+            if (await diretorRepository.SaveChangesAsync())
             {
                 return Results.Ok(diretor);
             }
-            else
-            {
-                return Results.Problem("Erro ao salvar o diretor");
-            }
+            
+            return Results.Problem("Erro ao salvar o diretor");
+            
         }
 
-        public static IResult UpdateDiretor(IDiretorRepository diretorRepository, Diretor diretorNovo)
+        public static async Task<IResult> UpdateDiretorAsync(IDiretorRepository diretorRepository, Diretor diretorNovo)
         {
             //na entidade filme, o update está sendo feito pelo metodo novo do EF Core o ExecuteUpdate
-            diretorRepository.Update(diretorNovo);
+            await diretorRepository.UpdateAsync(diretorNovo);
           
-            if (diretorRepository.SaveChanges())
+            if (await diretorRepository.SaveChangesAsync())
             {
                 return Results.Ok(diretorNovo);
             }
@@ -49,17 +49,17 @@ namespace FuscaFilmes.API.EndpointHandlers
             }
         }
 
-        public static IResult DeleteDiretor(IDiretorRepository diretorRepository, int diretorId)
+        public static async Task<IResult> DeleteDiretorAsync(IDiretorRepository diretorRepository, int diretorId)
         {
             //na entidade filme, o delete está sendo feito pelo metodo novo do EF Core o ExecuteDelete
-            diretorRepository.Delete(diretorId);
+            await diretorRepository.DeleteAsync(diretorId);
 
-            if (!diretorRepository.SaveChanges())
+            if (await diretorRepository.SaveChangesAsync())
             {               
-                return Results.Problem("Erro ao salvar o diretor");
-            }
-
             return Results.Ok();
+            }
+            
+            return Results.Problem("Erro ao salvar o diretor");
         }
 
     }

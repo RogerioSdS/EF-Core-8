@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using FuscaFilmes.API.Models;
 using FuscaFilmes.Domain.Entities;
 using FuscaFilmes.Repo.DbContexts;
@@ -5,49 +6,52 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FuscaFilmes.API.EndpointHandlers
 {
+    /*
+    /// Essa classe esta sendo feita para realizar as chamadas ao banco de dados, ela recebe o contexto por meio do construtor, ou seja, nada que esta sendo trabalhado na camada da API faz consultas ao banco de dados
+    */
     public static class FilmesHandlers
     {
-        public static IEnumerable<Filme> GetFilmes(Context context)
+        public static async Task<IEnumerable<Filme>> GetFilmesAsync(Context context)
         {
-            return context.Filmes
+            return await context.Filmes
                 .Include(filme => filme.Diretores)
                 .OrderByDescending(filme => filme.Ano)
                 .ThenBy(filme => filme.Titulo)
-                .ToList();
+                .ToListAsync();
         }
-        public static IEnumerable<Filme> GetFilmeById(int id, Context context)
+        public static async Task<IEnumerable<Filme>> GetFilmeByIdAsync(int id, Context context)
         {
-            return context.Filmes
+            return await context.Filmes
+                .Include(filme => filme.Diretores)
                 .Where(filme => filme.Id == id)
-                .Include(filme => filme.Diretores)
-                .ToList();
+                .ToListAsync();
         }
 
-        public static IEnumerable<Filme> GetFilmeEFFunctionByTitulo(string titulo, Context context)
+        public static async Task<IEnumerable<Filme>> GetFilmeEFFunctionByTituloAsync(string titulo, Context context)
         {
-            return context.Filmes
+            return await context.Filmes
+                .Include(filme => filme.Diretores)
                 .Where(filme => EF.Functions.Like(filme.Titulo, $"%{titulo}%"))
-                .Include(filme => filme.Diretores)
-                .ToList();
+                .ToListAsync();
         }
 
-        public static IEnumerable<Filme> GetFilmeContainsByTitulo(string titulo, Context context)
+        public static async Task<IEnumerable<Filme>> GetFilmeContainsByTituloAsync(string titulo, Context context)
         {
-            return context.Filmes
+            return await context.Filmes
+                .Include(filme => filme.Diretores)
                 .Where(filme => filme.Titulo.Contains(titulo))
-                .Include(filme => filme.Diretores)
-                .ToList();
+                .ToListAsync();
         }
 
-        public static void ExecuteDeleteFilme(int filmeId, Context context)
+        public static async Task ExecuteDeleteFilmeAsync(int filmeId, Context context)
         {
-            context.Filmes
+            await context.Filmes
             .Where(filme => filme.Id == filmeId)
-            .ExecuteDelete();
+            .ExecuteDeleteAsync();
         }
-        public static IResult UpdateFilme(FilmeUpdate filmeUpdate, Context context)
+        public static async Task<IResult> UpdateFilmeAsync(FilmeUpdate filmeUpdate, Context context)
         {
-            var filmeSeleted = context.Filmes.Find(filmeUpdate.Id);
+            var filmeSeleted = await context.Filmes.FindAsync(filmeUpdate.Id);
 
             if (filmeSeleted == null)
                 return Results.NotFound();
@@ -56,16 +60,16 @@ namespace FuscaFilmes.API.EndpointHandlers
             filmeSeleted.Ano = filmeUpdate.Ano;
 
             context.Update(filmeSeleted);
-            context.SaveChanges();
+            context.SaveChangesAsync();
 
             return Results.Ok(filmeSeleted);
         }
 
-        public static IResult ExecuteUpdateFilme(FilmeUpdate filmeUpdate, Context context)
+        public static async Task<IResult> ExecuteUpdateFilmeAsync(FilmeUpdate filmeUpdate, Context context)
         {
-            var result = context.Filmes
+            var result = await context.Filmes
             .Where(filme => filme.Id == filmeUpdate.Id)
-            .ExecuteUpdate(setter => setter
+            .ExecuteUpdateAsync(setter => setter
             .SetProperty(f => f.Titulo, filmeUpdate.Titulo)
             .SetProperty(f => f.Ano, filmeUpdate.Ano)
             );
